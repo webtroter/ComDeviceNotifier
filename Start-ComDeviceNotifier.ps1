@@ -33,7 +33,6 @@ $BTHeader = New-BTHeader -Id "ComDeviceNotifier" -Title "Com Device Notifier"
 
 $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
 $NotificationSplat = @{
-    Text = "Notification Text, placeholder"
     Header = $BTHeader
     AppLogo = $(Join-Path -Path $scriptPath -ChildPath "comlogo.png" )
     Silent = $true
