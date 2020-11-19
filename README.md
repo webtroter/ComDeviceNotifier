@@ -25,3 +25,7 @@ is to add a scheduled task.
 * Conditions : I allow the task to be run on battery power
   * Because generally, when I need to know what COM port I just plugged, I'm on the move.
 * Parameters : If the task is already running, stop the existing instance.
+
+## Stopping notes
+
+To stop the process, stop the scheduled task or the running thread in the task manager.
