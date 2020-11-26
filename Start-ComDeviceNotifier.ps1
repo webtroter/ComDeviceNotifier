@@ -26,6 +26,10 @@
 #>
 [CmdletBinding()]
 param (
+    # All Device Events
+    [Parameter()]
+    [switch]
+    $AllComDeviceEvent
 )
 Import-Module BurntToast
 
@@ -33,9 +37,9 @@ $BTHeader = New-BTHeader -Id "ComDeviceNotifier" -Title "Com Device Notifier"
 
 $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
 $NotificationSplat = @{
-    Header = $BTHeader
+    Header  = $BTHeader
     AppLogo = $(Join-Path -Path $scriptPath -ChildPath "comlogo.png" )
-    Silent = $true
+    Silent  = $true
 }
 New-BurntToastNotification @NotificationSplat -Text "ComDeviceNotifier Started"
 
@@ -53,32 +57,37 @@ $Action = [scriptblock] {
     
     
     switch ($EventInstanceEventArgs.NewEvent.PSTypeNames[0]) {
-        "Microsoft.Management.Infrastructure.CimInstance#root/CIMV2/__InstanceCreationEvent" { #'Device Arrival' 
+        "Microsoft.Management.Infrastructure.CimInstance#root/CIMV2/__InstanceCreationEvent" {
+            #'Device Arrival' 
             $EventInstanceEventArgs.NewEvent.TargetInstance.Name -match '(?<Name>COM\d)'
             $ComPort = $Matches.Name
             $NotificationSplat.Text = "$ComPort appeared"
         }
-        "Microsoft.Management.Infrastructure.CimInstance#ROOT/cimv2/__InstanceDeletionEvent" { # 'Device Removal'
+        "Microsoft.Management.Infrastructure.CimInstance#ROOT/cimv2/__InstanceDeletionEvent" {
+            # 'Device Removal'
             $EventInstanceEventArgs.NewEvent.TargetInstance.Name -match '(?<Name>COM\d)'
             $ComPort = $Matches.Name
             $NotificationSplat.Text = "$ComPort disappeared"
         }
         default { 
-            $EventInstanceEventArgs.NewEvent.TargetInstance.Name -match '(?<Name>COM\d)'
-            $ComPort = $Matches.Name
-            $NotificationSplat.Text = "Something happened to $ComPort. You can probably ignore this" }
+            if ($AllComDeviceEvent) {
+                $EventInstanceEventArgs.NewEvent.TargetInstance.Name -match '(?<Name>COM\d)'
+                $ComPort = $Matches.Name
+                $NotificationSplat.Text = "Something happened to $ComPort. You can probably ignore this"
+            }
+        }
     }
 
     New-BurntToastNotification @NotificationSplat
 }
 
-$query =  "Select * FROM __InstanceOperationEvent within 1 where targetInstance isa 'Win32_PnPEntity' and TargetInstance.PNPClass like 'Ports'"
+$query = "Select * FROM __InstanceOperationEvent within 1 where targetInstance isa 'Win32_PnPEntity' and TargetInstance.PNPClass like 'Ports'"
 Register-CimIndicationEvent -Query $query -Action $Action -SourceIdentifier "ComDeviceNotifier" | Out-Null
 
 function Stop-ComDeviceNotifier {
     param (    )
-        Unregister-Event -SourceIdentifier "ComDeviceNotifier"
-        New-BurntToastNotification @NotificationSplat -Text "ComDeviceNotifier Stopped"
+    Unregister-Event -SourceIdentifier "ComDeviceNotifier"
+    New-BurntToastNotification @NotificationSplat -Text "ComDeviceNotifier Stopped"
 }
 try {
     while ($true) {
