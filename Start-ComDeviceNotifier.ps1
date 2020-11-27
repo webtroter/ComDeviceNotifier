@@ -12,9 +12,6 @@
     .OUTPUTS
     None.
 
-    .EXAMPLE
-    C:\PS> .\Update-Month.ps1
-
     .NOTES
     Uses the module BurntToast to display notification within the notification system of Windows 10
 
